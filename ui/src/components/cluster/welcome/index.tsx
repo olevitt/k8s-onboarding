@@ -10,6 +10,7 @@ import Typography from '@material-ui/core/Typography';
 import { useHistory } from 'react-router-dom';
 import API from 'api';
 import { useKeycloak } from '@react-keycloak/web';
+import { ClusterCredentials } from 'api/api.d';
 
 const clusterName = 'dev.insee.io';
 
@@ -44,17 +45,26 @@ function getButtonMessage() {
 	];
 }
 
-function getStepContent(stepIndex: number, cluster: any) {
+function getStepContent(
+	stepIndex: number,
+	cluster: ClusterCredentials | undefined
+) {
 	switch (stepIndex) {
 		case 0:
-			return `Bienvenue sur la plateforme Kubernetes ${cluster.apiserverUrl} !  
+			return `Bienvenue sur la plateforme Kubernetes ${
+				cluster && cluster.apiserverUrl
+			} !  
 Cette plateforme est soumise aux conditions d'utilisations suivantes :  
 * Aucune garantie de service que ce soit en confidentialité, intégrité ou disponibilité  
 * dsqdsd  `;
 		case 1:
 			return `Cette plateforme est partagée avec d'autres utilisateurs, on va donc se créer un espace personnel.  
-Pour simplifier, on va s'attribuer le namespace ${cluster.namespace}'.  
-			Note : dans la vraie vie, c'est équivalent à kubectl create namespace ${cluster.namespace}`;
+Pour simplifier, on va s'attribuer le namespace ${
+				cluster && cluster.namespace
+			}'.  
+			Note : dans la vraie vie, c'est équivalent à kubectl create namespace ${
+				cluster && cluster.namespace
+			}`;
 		case 2:
 			return 'This is the bit I really care about!';
 		case 3:
@@ -67,7 +77,7 @@ Pour simplifier, on va s'attribuer le namespace ${cluster.namespace}'.
 export default function Welcome() {
 	const classes = useStyles();
 	const [activeStep, setActiveStep] = React.useState(0);
-	const [cluster, setCluster] = useState<any>({});
+	const [cluster, setCluster] = useState<ClusterCredentials | undefined>();
 	const steps = getSteps();
 	const { push } = useHistory();
 	const {
@@ -84,13 +94,15 @@ export default function Welcome() {
 		if (activeStep >= steps.length - 1) {
 			push('/cluster');
 		} else if (activeStep === 1) {
-			API.createNamespace(token, cluster.namespace).then((c) => {
+			API.createNamespace(token, cluster && cluster.namespace).then((c) => {
 				setActiveStep((prevActiveStep) => prevActiveStep + 1);
 			});
 		} else if (activeStep === 2) {
-			API.setPermissionsToNamespace(token, cluster.namespace).then((c) => {
-				setActiveStep((prevActiveStep) => prevActiveStep + 1);
-			});
+			API.setPermissionsToNamespace(token, cluster && cluster.namespace).then(
+				(c) => {
+					setActiveStep((prevActiveStep) => prevActiveStep + 1);
+				}
+			);
 		} else {
 			setActiveStep((prevActiveStep) => prevActiveStep + 1);
 		}
